@@ -47,11 +47,6 @@ abstract public class ScalaSourceMojoSupport extends ScalaMojoSupport {
      */
     protected Set<String> excludes = new HashSet<String>();
 
-    /**
-     * Retrieves the list of *all* root source directories.  We need to pass all .java and .scala files into the scala compiler
-     */
-    abstract protected List<File> getSourceDirectories() throws Exception;
-
     private boolean _filterPrinted = false;
 
     /**

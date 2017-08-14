@@ -41,12 +41,7 @@ import scala_maven_executions.JavaMainCallerInProcess;
 import scala_maven_executions.MainHelper;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public abstract class ScalaMojoSupport extends AbstractMojo {
 
@@ -194,6 +189,32 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
      * @parameter property="scala.version"
      */
     private String scalaVersion;
+
+    /**
+     * Whether to use Hydra or not
+     *
+     * @parameter property="hydraEnabled" default-value="false"
+     */
+    protected Boolean hydraEnabled = false;
+
+    /**
+     * Whether to use Hydra or not
+     *
+     * @parameter property="hydraVersion" default-value="0.9.3"
+     */
+    protected String hydraVersion = "0.9.3";
+
+    /**
+     * The number of cores to use by Hydra
+     *
+     * @parameter property="hydraCpus" default-value="4"
+     */
+    protected int hydraCpus = 4;
+
+
+    CompilerInstance getCompilerInstance() {
+        return hydraEnabled ? new HydraCompilerInstance() : new VanillaCompilerInstance();
+    }
 
     /**
      * Organization/group ID of the Scala used in the project.
@@ -730,7 +751,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
 
     protected JavaMainCaller getScalaCommand() throws Exception {
         return this.getScalaCommand(this.fork,
-                                    this.scalaClassName);
+                                    getCompilerInstance().getMainClass());
     }
 
     /**
@@ -752,6 +773,12 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
                                                    final String mainClass) throws Exception {
         JavaMainCaller cmd = getEmptyScalaCommand(mainClass, forkOverride);
         cmd.addArgs(args);
+
+        List<String> hydraOptionsList = getHydraOptions();
+        String[] hydraOptions = new String[hydraOptionsList.size()];
+        hydraOptionsList.toArray(hydraOptions);
+
+        cmd.addArgs(hydraOptions);
         if (StringUtils.isNotEmpty(addScalacArgs)) {
           cmd.addArgs(StringUtils.split(addScalacArgs, "|"));
         }
@@ -836,10 +863,25 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
     protected List<String> getScalaOptions() throws Exception {
         List<String> options = new ArrayList<String>();
         if (args != null) Collections.addAll(options, args);
+        options.addAll(getHydraOptions());
         if (StringUtils.isNotEmpty(addScalacArgs)) {
             Collections.addAll(options, StringUtils.split(addScalacArgs, "|"));
         }
         options.addAll(getCompilerPluginOptions());
+        return options;
+    }
+
+    protected List<String> getHydraOptions() throws Exception {
+        List<String> options = new ArrayList<String>();
+        if (hydraEnabled) {
+            options.add("-sourcepath");
+            options.add(MainHelper.toMultiPath(FileUtils.filesOf(getSourceDirectories(), useCanonicalPath)));
+            options.add("-cpus");
+            options.add(String.valueOf(hydraCpus));
+            options.add("-YhydraStore");
+            options.add(project.getBasedir() + "/.hydra/" + "compile");
+        }
+        getLog().info(options.toString());
         return options;
     }
 
@@ -882,14 +924,20 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         File lib = new File(scalaHome, "lib");
         return new File(lib, "scala-compiler.jar");
       }
-      return getArtifactJar(getScalaOrganization(), SCALA_COMPILER_ARTIFACTID, findScalaVersion().toString());
+      CompilerInstance ci = getCompilerInstance();
+      return getArtifactJar(ci.getGroupId(), ci.getArtifactId(), ci.getVersion());
     }
 
     protected List<File> getCompilerDependencies() throws Exception {
       List<File> d = new ArrayList<File>();
       if(StringUtils.isEmpty(scalaHome)) {
-        for (Artifact artifact : getAllDependencies(getScalaOrganization(), SCALA_COMPILER_ARTIFACTID, findScalaVersion().toString())) {
-          d.add(artifact.getFile());
+        CompilerInstance ci = getCompilerInstance();
+        Set<Artifact> deps = getAllDependencies(ci.getGroupId(), ci.getArtifactId(), ci.getVersion());
+
+        for (Artifact artifact : deps) {
+//          getLog().info("Adding compiler dependency: " + artifact);
+          if (artifact.getFile() != null)
+            d.add(artifact.getFile());
         }
       } else {
         for(File f : new File(scalaHome, "lib").listFiles()) {
@@ -1008,5 +1056,56 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
 	    	throw new Exception(msg);
         }
         return artifact.getFile();
+    }
+
+    /**
+     * Retrieves the list of *all* root source directories.  We need to pass all .java and .scala files into the scala compiler
+     */
+    protected List<File> getSourceDirectories() throws Exception {
+        return new ArrayList<File>();
+    }
+
+    protected class VanillaCompilerInstance implements CompilerInstance {
+        @Override
+        public String getGroupId() {
+            return getScalaOrganization();
+        }
+
+        @Override
+        public String getArtifactId() {
+            return SCALA_COMPILER_ARTIFACTID;
+        }
+
+        @Override
+        public String getVersion() throws Exception {
+            return findScalaVersion().toString();
+        }
+
+        @Override
+        public String getMainClass() {
+            return scalaClassName;
+        }
+    }
+
+    protected class HydraCompilerInstance implements CompilerInstance {
+        @Override
+        public String getGroupId() {
+            return "com.triplequote";
+        }
+
+        @Override
+        public String getArtifactId() throws Exception {
+            return "hydra_" + findScalaVersion();
+        }
+
+        @Override
+        public String getVersion() {
+            return hydraVersion;
+        }
+
+        @Override
+        public String getMainClass() {
+            return "com.triplequote.hydra.Main";
+        }
     }
 }
