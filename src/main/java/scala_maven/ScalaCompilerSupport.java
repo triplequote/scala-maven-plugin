@@ -276,7 +276,9 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
             File libraryJar = getLibraryJar();
             List<File> extraJars = getCompilerDependencies();
             extraJars.remove(libraryJar);
+
             incremental = new SbtIncrementalCompiler(//
+                getCompilerInstance(),
                 libraryJar, //
                 getReflectJar(), //
                 getCompilerJar(), //
@@ -284,6 +286,7 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
                 extraJars, //
                 new MavenArtifactResolver(factory, session), //
                 secondaryCacheDir, //
+               // interfaceSrcJar, // the original code we ported passed this
                 getLog(), //
                 cacheFile, //
                 compileOrder);

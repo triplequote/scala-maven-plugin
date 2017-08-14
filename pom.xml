@@ -1,8 +1,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>net.alchim31.maven</groupId>
+  <!-- <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>9</version>
+  </parent> -->
+
+  <groupId>com.triplequote.maven</groupId>
   <artifactId>scala-maven-plugin</artifactId>
-  <version>4.3.1</version>
+  <version>4.3.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>scala-maven-plugin</name>
@@ -16,6 +22,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
   <developers>
     <developer>
       <name>David Bernard</name>
@@ -109,16 +116,18 @@
 
   <distributionManagement>
     <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Nexus Release Repository</name>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      <id>hydra-releases</id>
+      <name>Triplequote Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-release</url>
     </repository>
+
     <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <id>hydra-snapshots</id>
+      <name>Triplequote Maven Snapshots</name>
+      <url>https://repo.triplequote.com/artifactory/libs-snapshot</url>
     </snapshotRepository>
   </distributionManagement>
+
   <properties>
     <encoding>UTF-8</encoding>
     <github.global.server>github</github.global.server>
@@ -252,6 +261,11 @@
     </dependency>
   </dependencies>
   <repositories>
+      <repository>
+      <id>hydra-staging</id>
+      <name>Triplequote Staging Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-release-staging</url>
+    </repository>
     <repository>
       <releases>
         <enabled>false</enabled>

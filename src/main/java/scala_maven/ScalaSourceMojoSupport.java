@@ -25,7 +25,7 @@ abstract public class ScalaSourceMojoSupport extends ScalaMojoSupport {
 
     /**
      * A list of inclusion filters for the compiler. ex :
-     * 
+     *
      * <pre>
      *    &lt;includes&gt;
      *      &lt;include&gt;SomeFile.scala&lt;/include&gt;
@@ -38,7 +38,7 @@ abstract public class ScalaSourceMojoSupport extends ScalaMojoSupport {
 
     /**
      * A list of exclusion filters for the compiler. ex :
-     * 
+     *
      * <pre>
      *    &lt;excludes&gt;
      *      &lt;exclude&gt;SomeBadFile.scala&lt;/exclude&gt;
@@ -48,12 +48,6 @@ abstract public class ScalaSourceMojoSupport extends ScalaMojoSupport {
      */
     @Parameter
     private Set<String> excludes = new HashSet<>();
-
-    /**
-     * Retrieves the list of *all* root source directories. We need to pass all
-     * .java and .scala files into the scala compiler
-     */
-    abstract protected List<File> getSourceDirectories() throws Exception;
 
     private boolean _filterPrinted = false;
 
