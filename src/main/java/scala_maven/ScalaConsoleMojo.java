@@ -101,4 +101,9 @@ public class ScalaConsoleMojo extends ScalaMojoSupport {
         }
         jcmd.run(displayCmd);
     }
+
+    @Override
+    public String getConfigurationName() {
+        return "console";
+    }
 }

@@ -449,4 +449,9 @@ public class ScalaDocMojo extends ScalaSourceMojoSupport implements MavenReport 
 
         return theBottom;
     }
+
+    @Override
+    public String getConfigurationName() {
+        return "doc";
+    }
 }

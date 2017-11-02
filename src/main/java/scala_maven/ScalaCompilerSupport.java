@@ -292,7 +292,7 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
             List<String> zincArgs = StringUtils.isEmpty(addZincArgs) ? new LinkedList<String>() : (List<String>) Arrays.asList(StringUtils.split(addZincArgs, "|"));
             File interfaceSrcJar =
                 hydraEnabled ?
-                    getArtifactJar("com.triplequote.sbt", "hydra-bridge", hydraVersion, compilerInterfaceClassifier)
+                    getArtifactJar("com.triplequote", "hydra-bridge", hydraVersion, compilerInterfaceClassifier)
                     : getPluginArtifactJar(sbtGroupId, compilerInterfaceArtifactId, sbtVersion, compilerInterfaceClassifier);
 
             getLog().info("Compiler interface jar: " + interfaceSrcJar);
@@ -347,5 +347,12 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
 
     protected File defaultTestAnalysisCacheFile(MavenProject p) {
         return new File(defaultAnalysisDirectory(p), "test-compile");
+    }
+
+    @Override
+    public String getConfigurationName() {
+        // this is probably never used anymore. This configuration will compile both main and test sources so we
+        // can't give a proper implementation of this method, but it should't really matter
+        return "continuous";
     }
 }
