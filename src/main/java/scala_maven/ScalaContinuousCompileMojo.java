@@ -122,6 +122,11 @@ public class ScalaContinuousCompileMojo extends ScalaCompilerSupport {
     }
 
     @Override
+    public String getConfigurationName() {
+        return "continuous";
+    }
+
+    @Override
     protected final void doExecute() throws Exception {
 
         mainOutputDir = FileUtils.fileOf(mainOutputDir, useCanonicalPath);

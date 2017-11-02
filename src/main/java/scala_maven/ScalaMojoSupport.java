@@ -863,15 +863,36 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         return options;
     }
 
+    /** Return `compile` or `test`, based on what kind of sources we are compiling. */
+    public abstract String getConfigurationName();
+
     protected List<String> getHydraOptions() throws Exception {
         List<String> options = new ArrayList<String>();
         if (hydraEnabled) {
+
+            String projectName = project.getName().replace(' ', '_');
+            String projectTag = projectName + "/" + getConfigurationName();
+            File baseDir = session.getTopLevelProject().getBasedir();
+
+            File hydraDir = new File(baseDir, ".hydra");
+            File projDir = new File(hydraDir, projectName);
+            File hydraStore = new File(projDir, getConfigurationName());
+            File timingsFile = new File(hydraDir, "timings.csv");
+
             options.add("-sourcepath");
             options.add(MainHelper.toMultiPath(FileUtils.filesOf(getSourceDirectories(), useCanonicalPath)));
             options.add("-cpus");
             options.add(String.valueOf(hydraCpus));
             options.add("-YhydraStore");
-            options.add(project.getBasedir() + "/.hydra/" + "compile");
+            options.add(hydraStore.getAbsolutePath());
+            options.add("-YhydraTag");
+            options.add(projectTag);
+            options.add("-YtimingsFile");
+            options.add(timingsFile.getAbsolutePath());
+            options.add("-YrootDirectory");
+            options.add(baseDir.getAbsolutePath());
+            // we always ask for metrics because there is no easy way to know if it's a clean build or not
+            options.add("-Ymetrics");
         }
         getLog().info(options.toString());
         return options;
