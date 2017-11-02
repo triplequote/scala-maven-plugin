@@ -26,10 +26,16 @@
 
   <distributionManagement>
     <repository>
-      <id>hydra-staging</id>
-      <name>Triplequote Staging Maven repo</name>
-      <url>https://repo.triplequote.com/artifactory/libs-release-staging</url>
+      <id>hydra-releases</id>
+      <name>Triplequote Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-release</url>
     </repository>
+
+    <snapshotRepository>
+      <id>hydra-snapshots</id>
+      <name>Triplequote Maven Snapshots</name>
+      <url>https://repo.triplequote.com/artifactory/libs-snapshot</url>
+    </snapshotRepository>
   </distributionManagement>
 
   <scm>
