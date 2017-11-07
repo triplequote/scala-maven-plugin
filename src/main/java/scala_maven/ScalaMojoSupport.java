@@ -735,9 +735,10 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
             File baseDir = session.getTopLevelProject().getBasedir();
 
             File hydraDir = new File(baseDir, ".hydra");
-            File projDir = new File(hydraDir, projectName);
+            File hydraMavenDir = new File(hydraDir, "maven");
+            File projDir = new File(hydraMavenDir, projectName);
             File hydraStore = new File(projDir, getConfigurationName());
-            File timingsFile = new File(hydraDir, "timings.csv");
+            File timingsFile = new File(hydraMavenDir, "timings.csv");
 
             options.add("-sourcepath");
             options.add(MainHelper.toMultiPath(FileUtils.filesOf(getSourceDirectories(), useCanonicalPath)));
