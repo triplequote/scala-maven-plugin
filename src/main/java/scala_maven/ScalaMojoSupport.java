@@ -774,7 +774,18 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         }
         addCompilerPluginOptions(cmd);
         cmd.addJvmArgs(jvmArgs);
+        cmd.addJvmArgs(getHydraJvmOptions());
+        // we also have to set the system property in case we're running Scalac in-process (the JVM args above will be ignored)
+        setHydraLogProperty();
+
         return cmd;
+    }
+
+    /**
+     * Set the system property used by Hydra for naming the log file.
+     */
+    protected void setHydraLogProperty() {
+        System.setProperty("hydra.logFile", new File(getHydraBaseDir(), "hydra.log").getAbsolutePath());
     }
 
     /**
@@ -874,8 +885,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
             String projectTag = projectName + "/" + getConfigurationName();
             File baseDir = session.getTopLevelProject().getBasedir();
 
-            File hydraDir = new File(baseDir, ".hydra");
-            File hydraMavenDir = new File(hydraDir, "maven");
+            File hydraMavenDir = getHydraBaseDir();
             File projDir = new File(hydraMavenDir, projectName);
             File hydraStore = new File(projDir, getConfigurationName());
             File timingsFile = new File(hydraMavenDir, "timings.csv");
@@ -897,6 +907,29 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         }
         getLog().info(options.toString());
         return options;
+    }
+
+    protected String[] getHydraJvmOptions() {
+        List<String> options = new ArrayList<String>();
+        if (hydraEnabled) {
+            File hydraMavenDir = getHydraBaseDir();
+            File hydraLogFile = new File(hydraMavenDir, "hydra.log");
+            options.add("-Dhydra.logFile=" + hydraLogFile.getAbsolutePath());
+        }
+
+        // convert to Array
+        String[] returnedArray = new String[options.size()];
+        options.toArray(returnedArray);
+
+        return returnedArray;
+    }
+
+    /** Return the directory where all Hydra-related files should be placed */
+    protected File getHydraBaseDir() {
+        File baseDir = session.getTopLevelProject().getBasedir();
+
+        File hydraDir = new File(baseDir, ".hydra");
+        return new File(hydraDir, "maven");
     }
 
     protected List<String> getJavacOptions() {
