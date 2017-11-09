@@ -110,6 +110,9 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
     }
 
     protected int compile(List<File> sourceRootDirs, File outputDir, File analysisCacheFile, List<String> classpathElements, boolean compileInLoop) throws Exception, InterruptedException {
+        if (hydraEnabled)
+            setHydraLogProperty();
+
         if (!compileInLoop && INCREMENTAL.equals(recompileMode)) {
             // TODO - Do we really need this dupliated here?
             if (!outputDir.exists()) {
