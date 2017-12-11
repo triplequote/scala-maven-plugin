@@ -835,13 +835,46 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
       return getArtifactJar(ci.getGroupId(), ci.getArtifactId(), ci.getVersion());
     }
 
+    private Set<Artifact> cleanUpDependencies(Set<Artifact> deps, CompilerInstance ci) throws Exception {
+        Set<Artifact> result = new HashSet<Artifact>();
+        VersionNumber scalaVersion = findScalaVersion();
+
+        if (ci instanceof HydraCompilerInstance) {
+            // filter out other versions of scala-reflect/library
+            for (Artifact artifact: deps) {
+                String artifactId = artifact.getArtifactId();
+                if (artifactId.equals("scala-reflect") || artifactId.equals("scala-compiler")) {
+                    // only add the -hydraNN version
+                    if (artifact.getVersion().contains("hydra"))
+                        result.add(artifact);
+                    else {
+                        //we don't add the artifact, as it may be a conflicting transitive dependency
+                        getLog().debug("Removed " + artifact + " from compiler dependency list because it does not contain -hydra");
+                    }
+
+                } else if (artifactId.equals("scala-library")) {
+                    if (artifact.getVersion().equals(scalaVersion.toString()))
+                        result.add(artifact);
+                    else {
+                        // we don't add the library, as we might have conflicting versions
+                        getLog().debug("Removed " + artifact + " from compiler dependency list because expected scala-library version is: " + scalaVersion);
+                    }
+                } else
+                    // we add all other artifacts
+                    result.add(artifact);
+            }
+        }
+        return result;
+    }
+
     protected List<File> getCompilerDependencies() throws Exception {
       List<File> d = new ArrayList<File>();
       if(StringUtils.isEmpty(scalaHome)) {
         CompilerInstance ci = getCompilerInstance();
         Set<Artifact> deps = getAllDependencies(ci.getGroupId(), ci.getArtifactId(), ci.getVersion());
 
-        for (Artifact artifact : deps) {
+
+        for (Artifact artifact : cleanUpDependencies(deps, ci)) {
 //          getLog().info("Adding compiler dependency: " + artifact);
           if (artifact.getFile() != null)
             d.add(artifact.getFile());
