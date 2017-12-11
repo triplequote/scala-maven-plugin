@@ -848,7 +848,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
                     if (artifact.getVersion().contains("hydra"))
                         result.add(artifact);
                     else {
-                        //we don't add the artifact, as it may be a conflicting transitive dependency
+                        // we don't add the artifact, as it may be a conflicting transitive dependency
                         getLog().debug("Removed " + artifact + " from compiler dependency list because it does not contain -hydra");
                     }
 
