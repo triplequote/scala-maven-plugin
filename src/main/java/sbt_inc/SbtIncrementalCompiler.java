@@ -32,6 +32,8 @@ public class SbtIncrementalCompiler {
 
     private File libraryJar;
 
+    private File interfaceJar;
+
     private List<File> extraJars;
 
     private List<String> extraArgs;
@@ -51,6 +53,7 @@ public class SbtIncrementalCompiler {
                 this.libraryJar = libraryJar;
                 this.extraJars = extraJars;
                 this.extraArgs = args;
+                this.interfaceJar = interfaceJar;
             } else {
                 l.warn("Zinc server is not available at port " + zincPort + " - reverting to normal incremental compile");
                 this.useServer = false;
@@ -101,6 +104,8 @@ public class SbtIncrementalCompiler {
         arguments.add(compilerJar.getAbsolutePath());
         arguments.add("-scala-library");
         arguments.add(libraryJar.getAbsolutePath());
+        arguments.add("-compiler-interface");
+        arguments.add(interfaceJar.getAbsolutePath());
         arguments.add("-scala-extra");
         List<String> extraPaths = new ArrayList<String>();
         for (File extraJar : extraJars) {
