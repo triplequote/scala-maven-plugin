@@ -143,6 +143,19 @@
     <maven>${maven.version}</maven>
   </prerequisites>
 
+  <repositories>
+    <repository>
+      <id>hydra-releases</id>
+      <name>Triplequote Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-release</url>
+    </repository>
+    <repository>
+      <id>hydra-snapshots</id>
+      <name>Triplequote Snapshot Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-snapshot</url>
+    </repository>
+  </repositories>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -258,6 +271,11 @@
       <groupId>org.scala-lang.modules</groupId>
       <artifactId>scala-java8-compat_2.12</artifactId>
       <version>0.9.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.triplequote</groupId>
+      <artifactId>license-checking</artifactId>
+      <version>0.9.10-SNAPSHOT</version>
     </dependency>
   </dependencies>
   <repositories>
@@ -566,6 +584,14 @@
           </execution>
         </executions>
       </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>1.7</source>
+                <target>1.7</target>
+            </configuration>
+        </plugin>
     </plugins>
   </build>
   <reporting>
