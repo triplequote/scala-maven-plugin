@@ -87,4 +87,9 @@ public class ScalaTestCompileMojo extends ScalaCompilerSupport {
     protected File getAnalysisCacheFile() throws Exception {
         return testAnalysisCacheFile.getAbsoluteFile();
     }
+
+    @Override
+    public String getConfigurationName() {
+        return "test";
+    }
 }

@@ -1,14 +1,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
+  <!-- <parent>
     <groupId>org.sonatype.oss</groupId>
     <artifactId>oss-parent</artifactId>
     <version>9</version>
-  </parent>
+  </parent> -->
 
-  <groupId>net.alchim31.maven</groupId>
+  <groupId>com.triplequote.maven</groupId>
   <artifactId>scala-maven-plugin</artifactId>
-  <version>3.3.1</version>
+  <version>3.3.1-hydra05-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>scala-maven-plugin</name>
@@ -23,6 +23,20 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
+  <distributionManagement>
+    <repository>
+      <id>hydra-releases</id>
+      <name>Triplequote Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-release</url>
+    </repository>
+
+    <snapshotRepository>
+      <id>hydra-snapshots</id>
+      <name>Triplequote Maven Snapshots</name>
+      <url>https://repo.triplequote.com/artifactory/libs-snapshot</url>
+    </snapshotRepository>
+  </distributionManagement>
 
   <scm>
     <connection>scm:git:git://github.com/davidB/${project.artifactId}.git</connection>
@@ -107,6 +121,14 @@
     <maven>${maven.version}</maven>
   </prerequisites>
 
+  <repositories>
+    <repository>
+      <id>hydra-staging</id>
+      <name>Triplequote Staging Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-release-staging</url>
+    </repository>
+  </repositories>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -188,9 +210,9 @@
     </dependency>
     <!-- sbt incremental compiler -->
     <dependency>
-      <groupId>com.typesafe.zinc</groupId>
+      <groupId>com.triplequote.zinc</groupId>
       <artifactId>zinc</artifactId>
-      <version>0.3.9</version>
+      <version>0.6.13</version>
     </dependency>
 <!--
     <dependency>
@@ -418,6 +440,7 @@
     <profile>
       <id>integration-tests</id>
       <activation>
+          <!-- <activeByDefault>true</activeByDefault> -->
         <property>
           <name>maven.test.skip</name>
           <value>!true</value>

@@ -110,6 +110,9 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
     }
 
     protected int compile(List<File> sourceRootDirs, File outputDir, File analysisCacheFile, List<String> classpathElements, boolean compileInLoop) throws Exception, InterruptedException {
+        if (hydraEnabled)
+            setHydraLogProperty();
+
         if (!compileInLoop && INCREMENTAL.equals(recompileMode)) {
             // TODO - Do we really need this dupliated here?
             if (!outputDir.exists()) {
@@ -290,8 +293,13 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
             String sbtVersion = findVersionFromPluginArtifacts(sbtGroupId, SbtIncrementalCompiler.COMPILER_INTEGRATION_ARTIFACT_ID);
             File xsbtiJar = getPluginArtifactJar(sbtGroupId, xsbtiArtifactId, sbtVersion);
             List<String> zincArgs = StringUtils.isEmpty(addZincArgs) ? new LinkedList<String>() : (List<String>) Arrays.asList(StringUtils.split(addZincArgs, "|"));
-            File interfaceSrcJar = getPluginArtifactJar(sbtGroupId, compilerInterfaceArtifactId, sbtVersion, compilerInterfaceClassifier);
-           	incremental = new SbtIncrementalCompiler(useZincServer, zincPort, libraryJar, compilerJar, extraJars, xsbtiJar, interfaceSrcJar, getLog(), zincArgs);
+            File interfaceSrcJar =
+                hydraEnabled ?
+                    getArtifactJar("com.triplequote", "hydra-bridge", hydraVersion, compilerInterfaceClassifier)
+                    : getPluginArtifactJar(sbtGroupId, compilerInterfaceArtifactId, sbtVersion, compilerInterfaceClassifier);
+
+            getLog().info("Compiler interface jar: " + interfaceSrcJar);
+            incremental = new SbtIncrementalCompiler(useZincServer, zincPort, libraryJar, compilerJar, extraJars, xsbtiJar, interfaceSrcJar, getLog(), zincArgs);
         }
 
         classpathElements.remove(outputDir.getAbsolutePath());
@@ -342,5 +350,12 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
 
     protected File defaultTestAnalysisCacheFile(MavenProject p) {
         return new File(defaultAnalysisDirectory(p), "test-compile");
+    }
+
+    @Override
+    public String getConfigurationName() {
+        // this is probably never used anymore. This configuration will compile both main and test sources so we
+        // can't give a proper implementation of this method, but it should't really matter
+        return "continuous";
     }
 }

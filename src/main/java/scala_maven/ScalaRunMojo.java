@@ -95,4 +95,9 @@ public class ScalaRunMojo extends ScalaMojoSupport {
             getLog().warn("Not mainClass or valid launcher found/define");
         }
     }
+
+    @Override
+    public String getConfigurationName() {
+        return "run";
+    }
 }

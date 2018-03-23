@@ -314,4 +314,9 @@ public class ScalaConsoleMojo extends ScalaMojoSupport {
             return super.factory.createArtifact(ScalaConsoleMojo.JLINE, ScalaConsoleMojo.JLINE, "0.9.94", "", ScalaMojoSupport.JAR);
         }
     }
+
+    @Override
+    public String getConfigurationName() {
+        return "console";
+    }
 }
