@@ -1,0 +1,8 @@
+pipeline:
+  build:
+    image: maven:3.5.3-jdk-8
+    secrets: [drone_password]
+    commands:
+      - mkdir -p /root/.m2
+      - cp .drone.settings.xml /root/.m2/settings.xml
+      - mvn -B install
