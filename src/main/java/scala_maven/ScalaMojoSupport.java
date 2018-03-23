@@ -1017,6 +1017,8 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
                     // we add all other artifacts
                     result.add(artifact);
             }
+        } else {
+            result.addAll(deps);
         }
         return result;
     }
