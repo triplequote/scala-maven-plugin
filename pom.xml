@@ -117,9 +117,14 @@
 
   <repositories>
     <repository>
-      <id>hydra-staging</id>
-      <name>Triplequote Staging Maven repo</name>
-      <url>https://repo.triplequote.com/artifactory/libs-release-staging</url>
+      <id>hydra-releases</id>
+      <name>Triplequote Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-release</url>
+    </repository>
+    <repository>
+      <id>hydra-snapshots</id>
+      <name>Triplequote Snapshot Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-snapshot</url>
     </repository>
   </repositories>
 
@@ -209,14 +214,11 @@
       <artifactId>zinc</artifactId>
       <version>0.6.13</version>
     </dependency>
-<!--
     <dependency>
-      <groupId>com.typesafe.sbt</groupId>
-      <artifactId>incremental-compiler</artifactId>
-      <version>0.12.1</version>
+      <groupId>com.triplequote</groupId>
+      <artifactId>license-checking</artifactId>
+      <version>0.9.10-SNAPSHOT</version>
     </dependency>
--->
-
   </dependencies>
 
   <build>
@@ -419,6 +421,14 @@
           </dependency>
         </dependencies>
       </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>1.7</source>
+                <target>1.7</target>
+            </configuration>
+        </plugin>
     </plugins>
   </build>
 
