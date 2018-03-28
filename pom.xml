@@ -212,12 +212,12 @@
     <dependency>
       <groupId>com.triplequote.zinc</groupId>
       <artifactId>zinc</artifactId>
-      <version>0.6.13</version>
+      <version>0.8.13</version>
     </dependency>
     <dependency>
       <groupId>com.triplequote</groupId>
       <artifactId>license-checking</artifactId>
-      <version>0.9.10-SNAPSHOT</version>
+      <version>0.9.10</version>
     </dependency>
   </dependencies>
 
@@ -407,6 +407,7 @@
         <configuration>
           <releaseProfiles>release</releaseProfiles>
           <goals>changes:changes-validate install animal-sniffer:check site deploy changes:announcement-generate</goals>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
         </configuration>
         <dependencies>
           <dependency>
