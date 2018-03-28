@@ -13,7 +13,7 @@
 
   <name>scala-maven-plugin</name>
   <description>The scala-maven-plugin (previously maven-scala-plugin) is used for compiling/testing/running/documenting scala code of any maven project.</description>
-  <url>http://github.com/davidB/${project.artifactId}</url>
+  <url>http://github.com/triplequote/${project.artifactId}</url>
   <inceptionYear>2012</inceptionYear>
   <licenses>
     <license>
@@ -94,26 +94,6 @@
     </contributor>
   </contributors>
 
-  <mailingLists>
-    <mailingList>
-      <name>maven-and-scala</name>
-      <archive>http://groups.google.com/group/maven-and-scala</archive>
-      <post>http://groups.google.com/group/maven-and-scala</post>
-    </mailingList>
-  </mailingLists>
-
-  <scm>
-    <connection>scm:git:git://github.com/davidB/${project.artifactId}.git</connection>
-    <developerConnection>scm:git:git@github.com:davidB/${project.artifactId}.git</developerConnection>
-    <url>http://github.com/davidB/${project.artifactId}/</url>
-    <tag>4.3.1</tag>
-  </scm>
-
-  <issueManagement>
-    <system>github</system>
-    <url>http://github.com/davidB/${project.artifactId}/issues#issue/</url>
-  </issueManagement>
-
   <distributionManagement>
     <repository>
       <id>hydra-releases</id>
@@ -127,6 +107,26 @@
       <url>https://repo.triplequote.com/artifactory/libs-snapshot</url>
     </snapshotRepository>
   </distributionManagement>
+
+  <scm>
+    <connection>scm:git:git://github.com/triplequote/${project.artifactId}.git</connection>
+    <developerConnection>scm:git:git@github.com:triplequote/${project.artifactId}.git</developerConnection>
+    <url>http://github.com/triplequote/${project.artifactId}/</url>
+    <tag>3.2.2</tag>
+  </scm>
+
+  <issueManagement>
+    <system>github</system>
+    <url>http://github.com/triplequote/${project.artifactId}/issues#issue/</url>
+  </issueManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>maven-and-scala</name>
+      <archive>http://groups.google.com/group/maven-and-scala</archive>
+      <post>http://groups.google.com/group/maven-and-scala</post>
+    </mailingList>
+  </mailingLists>
 
   <properties>
     <encoding>UTF-8</encoding>
