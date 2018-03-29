@@ -109,6 +109,7 @@
     <encoding>UTF-8</encoding>
     <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
     <github.global.server>github</github.global.server>
+    <additionalparam>-Xdoclint:none</additionalparam>
   </properties>
 
   <prerequisites>
