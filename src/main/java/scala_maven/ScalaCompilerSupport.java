@@ -1,5 +1,6 @@
 package scala_maven;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.project.MavenProject;
@@ -7,9 +8,13 @@ import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import sbt_inc.SbtIncrementalCompiler;
 import scala_maven_executions.JavaMainCaller;
+import scala_maven_executions.JvmProcess;
 import scala_maven_executions.MainHelper;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -87,6 +92,7 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
      */
     private String addZincArgs = "";
 
+
     @Override
     protected void doExecute() throws Exception {
         if (getLog().isDebugEnabled()) {
@@ -110,8 +116,10 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
     }
 
     protected int compile(List<File> sourceRootDirs, File outputDir, File analysisCacheFile, List<String> classpathElements, boolean compileInLoop) throws Exception, InterruptedException {
-        if (hydraEnabled)
+        if (hydraEnabled) {
             setHydraLogProperty();
+            ensureMetricsServiceRunning(hydraMetricsServiceVersion);
+        }
 
         if (!compileInLoop && INCREMENTAL.equals(recompileMode)) {
             // TODO - Do we really need this dupliated here?
@@ -171,6 +179,42 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
         getLog().info(String.format("compile in %d s", (System.currentTimeMillis() - t1) / 1000));
         _lastCompileAt = t1;
         return files.size();
+    }
+
+    private void ensureMetricsServiceRunning(String version) throws Exception {
+        if (!hydraVersionWithDashboard()) {
+            getLog().info(hydraVersion + " does not support the metrics service, no metrics will be pushed");
+            return;
+        }
+
+        // first check if the runid file exists, as that's faster than spawning a JVM to check the same thing
+        Path runidFile = Paths.get(hydraMetricsDirectory, ".metrics.runid");
+        if (Files.exists(runidFile)) {
+            getLog().debug("MetricsService already running. If that's not the case, please remove " + runidFile);
+            return;
+        }
+
+        // launch MetricsService
+        File jar = getArtifactJar("com.triplequote", "dashboard-client_2.12", version);
+        Set<Artifact> allDependencies = getAllDependencies("com.triplequote", "dashboard-client_2.12", version);
+
+        List<String> classpath = new ArrayList<>();
+        classpath.add(jar.getCanonicalPath());
+        for (Artifact dep : allDependencies) {
+            if (dep.getFile() != null)
+                classpath.add(FileUtils.pathOf(dep.getFile(), useCanonicalPath));
+        }
+        String[] cp = new String[classpath.size()];
+
+        String cpString = MainHelper.toMultiPath(classpath.toArray(cp));
+
+        JvmProcess proc = new JvmProcess(toolchainManager.getToolchainFromBuildContext("jdk", session), "com.triplequote.dashboard.client.MetricsService");
+        String[] jvmArgs = hydraMetricsServiceJvmArgs.split("\\s+");
+        proc.addJvmArgs(jvmArgs);
+        proc.addJvmArgs("-classpath", cpString);
+        proc.addSysProp("triplequote.dashboard.client.metricsDirectory", hydraMetricsDirectory);
+        proc.addSysProp("triplequote.dashboard.client.serverUrl", hydraDashboardServerUrl);
+        proc.spawn(false);
     }
 
     /**
