@@ -6,10 +6,17 @@ import java.util.List;
 
 import org.apache.maven.plugins.annotations.Parameter;
 
+import org.apache.maven.artifact.Artifact;
 import sbt_inc.SbtIncrementalCompiler;
 import xsbti.compile.CompileOrder;
 import scala_maven_executions.JavaMainCaller;
+import scala_maven_executions.JvmProcess;
 import scala_maven_executions.MainHelper;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 /**
  * Abstract parent of all Scala Mojo who run compilation
@@ -102,9 +109,11 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
     }
 
     protected int compile(List<File> sourceRootDirs, File outputDir, File analysisCacheFile,
-        List<String> classpathElements, boolean compileInLoop) throws Exception {
-        if (hydraEnabled)
+        List<String> classpathElements, boolean compileInLoop) throws Exception, InterruptedException {
+        if (hydraEnabled) {
             setHydraLogProperty();
+            ensureMetricsServiceRunning(hydraMetricsServiceVersion);
+        }
 
         if (!compileInLoop && recompileMode == RecompileMode.incremental) {
             // TODO - Do we really need this dupliated here?
@@ -170,6 +179,51 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
         getLog().info(String.format("compile in %.1f s", (System.nanoTime() - n1) / 1_000_000_000.0));
         _lastCompileAt = t1;
         return files.size();
+    }
+
+    private void ensureMetricsServiceRunning(String version) throws Exception {
+        if (!hydraVersionWithDashboard()) {
+            getLog().info(hydraVersion + " does not support the metrics service, no metrics will be pushed");
+            return;
+        }
+
+        // first check if the runid file exists, as that's faster than spawning a JVM to
+        // check the same thing
+        Path runidFile = Paths.get(hydraMetricsDirectory, ".metrics.runid");
+        if (Files.exists(runidFile)) {
+            getLog().debug("MetricsService already running. If that's not the case, please remove " + runidFile);
+            return;
+        }
+
+        // launch MetricsService
+        File jar = getArtifactJar("com.triplequote", "dashboard-client_2.12", version);
+        Set<Artifact> allDependencies = getAllDependencies("com.triplequote", "dashboard-client_2.12", version);
+
+        List<String> classpath = new ArrayList<>();
+        classpath.add(jar.getCanonicalPath());
+        for (Artifact dep : allDependencies) {
+            if (dep.getFile() != null)
+                classpath.add(FileUtils.pathOf(dep.getFile(), useCanonicalPath));
+        }
+        String[] cp = new String[classpath.size()];
+
+        String cpString = MainHelper.toMultiPath(classpath.toArray(cp));
+
+        JvmProcess proc = new JvmProcess(toolchainManager.getToolchainFromBuildContext("jdk", session),
+            "com.triplequote.dashboard.client.MetricsService");
+        String[] jvmArgs = hydraMetricsServiceJvmOptions.split("\\s+");
+        proc.addJvmArgs(jvmArgs);
+        proc.addJvmArgs("-classpath", cpString);
+
+        Properties sysProps = System.getProperties();
+        for (String key : sysProps.stringPropertyNames()) {
+            if (key.startsWith("triplequote.dashboard.client") || key.startsWith("hydra.log"))
+                proc.addSysProp(key, sysProps.getProperty(key));
+        }
+
+        proc.addSysProp("triplequote.dashboard.client.metricsDirectory", hydraMetricsDirectory);
+        proc.addSysProp("triplequote.dashboard.client.serverUrl", hydraDashboardServerUrl);
+        proc.spawn(false);
     }
 
     /**

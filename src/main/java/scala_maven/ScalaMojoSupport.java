@@ -199,6 +199,36 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
      */
     protected int hydraCpus = 4;
 
+    /**
+     * Where to store metrics files until they are uploaded
+     *
+     * @parameter property="hydraMetricsDirectory"
+     *            default-value="${user.home}/.triplequote/metrics"
+     */
+    protected String hydraMetricsDirectory = "";
+
+    /**
+     * Where to upload metrics files
+     *
+     * @parameter property="hydraDashboardServerUrl"
+     *            default-value="http://localhost:3333"
+     */
+    protected String hydraDashboardServerUrl = "";
+
+    /**
+     * Version of the MetricsService uploader
+     *
+     * @parameter property="hydraMetricsServiceVersion" default-value="0.10.0"
+     */
+    protected String hydraMetricsServiceVersion = "";
+
+    /**
+     * Version of the MetricsService uploader
+     *
+     * @parameter property="hydraMetricsServiceJvmOptions" default-value="-Xmx256M"
+     */
+    protected String hydraMetricsServiceJvmOptions = "";
+
     private CompilerInstance compilerInstance = null;
 
     CompilerInstance getCompilerInstance() {
@@ -908,6 +938,10 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
             // we always ask for metrics because there is no easy way to know if it's a
             // clean build or not
             options.add("-Ymetrics");
+            if (hydraVersionWithDashboard()) {
+                options.add("-YhydraMetricsDirectory");
+                options.add(hydraMetricsDirectory);
+            }
         }
         getLog().info(options.toString());
         return options;
@@ -934,6 +968,13 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
 
         File hydraDir = new File(baseDir, ".hydra");
         return new File(hydraDir, "maven");
+    }
+
+    protected boolean hydraVersionWithDashboard() {
+        // we add metricsDirectory only with Hydra is above 0.9.12
+        VersionNumber v = new VersionNumber(hydraVersion);
+        VersionNumber minMetricsVer = new VersionNumber("0.9.13");
+        return v.compareTo(minMetricsVer) >= 0;
     }
 
     protected List<String> getJavacOptions() {
@@ -1061,7 +1102,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         return artifact.getFile();
     }
 
-    private Set<Artifact> getAllDependencies(String groupId, String artifactId, String version) {
+    protected Set<Artifact> getAllDependencies(String groupId, String artifactId, String version) {
         Set<Artifact> result = new HashSet<>();
         Artifact pom = factory.createArtifact(groupId, artifactId, version, "", ScalaMojoSupport.POM);
         Set<Artifact> d = resolveArtifactDependencies(pom);

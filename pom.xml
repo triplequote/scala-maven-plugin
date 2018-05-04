@@ -279,32 +279,6 @@
       <version>0.9.10</version>
     </dependency>
   </dependencies>
-  <repositories>
-      <repository>
-      <id>hydra-staging</id>
-      <name>Triplequote Staging Maven repo</name>
-      <url>https://repo.triplequote.com/artifactory/libs-release-staging</url>
-    </repository>
-    <repository>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </repository>
-    <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>central</id>
-      <name>Central Repository</name>
-      <url>https://repo.maven.apache.org/maven2</url>
-    </repository>
-  </repositories>
   <pluginRepositories>
     <pluginRepository>
       <releases>
@@ -491,11 +465,6 @@
       <plugin>
         <artifactId>maven-release-plugin</artifactId>
         <version>2.5.3</version>
-        <configuration>
-          <releaseProfiles>release</releaseProfiles>
-          <goals>changes:changes-validate install animal-sniffer:check site deploy changes:announcement-generate</goals>
-          <tagNameFormat>v@{project.version}</tagNameFormat>
-        </configuration>
         <dependencies>
           <dependency>
             <groupId>org.apache.maven.scm</groupId>
@@ -512,7 +481,8 @@
         </dependencies>
         <configuration>
           <releaseProfiles>release</releaseProfiles>
-          <goals>install animal-sniffer:check site deploy nexus-staging:release</goals>
+          <goals>changes:changes-validate install animal-sniffer:check site deploy changes:announcement-generate</goals>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
           <useReleaseProfile>false</useReleaseProfile>
           <autoVersionSubmodules>true</autoVersionSubmodules>
         </configuration>
@@ -590,14 +560,6 @@
           </execution>
         </executions>
       </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <source>1.7</source>
-                <target>1.7</target>
-            </configuration>
-        </plugin>
     </plugins>
   </build>
   <reporting>

@@ -18,7 +18,8 @@ public class HydraActivateLicenseMojo extends HydraLicenseMojo {
 
     @Override
     protected License executeLicenseOperation(HydraLicenseStore store) throws IOException {
-        String key = licenseKey == null ? store.loadProperties().getProperty(HydraLicenseStore.LICENSE_KEY) : licenseKey;
+        String key = licenseKey == null ? store.loadProperties().getProperty(HydraLicenseStore.LICENSE_KEY)
+            : licenseKey;
         getLog().info("Activating license " + key + " using " + activationServerUrl + ". This may take a while.");
 
         return store.activate(key);

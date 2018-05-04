@@ -17,4 +17,3 @@ public class HydraDeactivateLicenseMojo extends HydraLicenseMojo {
         return store.deactivate();
     }
 }
-
