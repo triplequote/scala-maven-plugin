@@ -481,7 +481,7 @@
         </dependencies>
         <configuration>
           <releaseProfiles>release</releaseProfiles>
-          <goals>changes:changes-validate install animal-sniffer:check site deploy changes:announcement-generate</goals>
+          <goals>changes:changes-validate install deploy</goals>
           <tagNameFormat>v@{project.version}</tagNameFormat>
           <useReleaseProfile>false</useReleaseProfile>
           <autoVersionSubmodules>true</autoVersionSubmodules>
