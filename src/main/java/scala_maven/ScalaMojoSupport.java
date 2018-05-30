@@ -187,9 +187,9 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
     /**
      * Whether to use Hydra or not
      *
-     * @parameter property="hydraVersion" default-value="0.9.9"
+     * @parameter property="hydraVersion" default-value="0.11.0"
      */
-    protected String hydraVersion = "0.9.9";
+    protected String hydraVersion = "0.11.0";
 
     /**
      * The number of cores to use by Hydra
@@ -215,7 +215,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
     /**
      * Version of the MetricsService uploader
      *
-     * @parameter property="hydraMetricsServiceVersion" default-value="0.10.0"
+     * @parameter property="hydraMetricsServiceVersion" default-value="0.11.0"
      */
     protected String hydraMetricsServiceVersion = "";
 
