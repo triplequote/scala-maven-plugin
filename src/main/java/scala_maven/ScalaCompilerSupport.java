@@ -222,7 +222,10 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
         }
 
         proc.addSysProp("triplequote.dashboard.client.metricsDirectory", hydraMetricsDirectory);
-        proc.addSysProp("triplequote.dashboard.client.serverUrl", hydraDashboardServerUrl);
+        Path hydraMetricsConfigFile = Paths.get(hydraMetricsDirectory).resolve("config").resolve("metrics-service.conf");
+        if (hydraMetricsConfigFile.toFile().isFile()) {
+            proc.addSysProp("config.file", hydraMetricsConfigFile.toString());
+        }
         proc.spawn(false);
     }
 
