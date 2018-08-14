@@ -206,16 +206,9 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
     protected String hydraMetricsDirectory = "";
 
     /**
-     * Where to upload metrics files
-     *
-     * @parameter property="hydraDashboardServerUrl" default-value="http://localhost:3333"
-     */
-    protected String hydraDashboardServerUrl = "";
-
-    /**
      * Version of the MetricsService uploader
      *
-     * @parameter property="hydraMetricsServiceVersion" default-value="0.11.0"
+     * @parameter property="hydraMetricsServiceVersion" default-value="1.1.0-SNAPSHOT"
      */
     protected String hydraMetricsServiceVersion = "";
 
