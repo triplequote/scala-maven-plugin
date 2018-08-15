@@ -208,7 +208,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
     /**
      * Version of the MetricsService uploader
      *
-     * @parameter property="hydraMetricsServiceVersion" default-value="1.1.0-SNAPSHOT"
+     * @parameter property="hydraMetricsServiceVersion" default-value="1.1.0"
      */
     protected String hydraMetricsServiceVersion = "";
 
