@@ -222,9 +222,12 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
         }
 
         proc.addSysProp("triplequote.dashboard.client.metricsDirectory", hydraMetricsDirectory);
-        Path hydraMetricsConfigFile = Paths.get(hydraMetricsDirectory).resolve("config").resolve("metrics-service.conf");
+        Path hydraMetricsConfigFile = Paths.get(hydraMetricsDirectory).resolve("config").resolve("metrics-service.conf").toAbsolutePath();
         if (hydraMetricsConfigFile.toFile().isFile()) {
             proc.addSysProp("config.file", hydraMetricsConfigFile.toString());
+        } else {
+            String configFileMissing = String.format("No metrics service config file found at %s - see https://docs.triplequote.com/dashboard/metrics-service/", hydraMetricsConfigFile);
+            getLog().info(configFileMissing);
         }
         proc.spawn(false);
     }
