@@ -8,7 +8,7 @@
 
   <groupId>com.triplequote.maven</groupId>
   <artifactId>scala-maven-plugin</artifactId>
-  <version>3.2.2-hydra08</version>
+  <version>3.2.2-hydra09-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>scala-maven-plugin</name>
@@ -42,7 +42,7 @@
     <connection>scm:git:git://github.com/triplequote/${project.artifactId}.git</connection>
     <developerConnection>scm:git:git@github.com:triplequote/${project.artifactId}.git</developerConnection>
     <url>http://github.com/triplequote/${project.artifactId}/</url>
-    <tag>v3.2.2-hydra08</tag>
+    <tag>3.2.2</tag>
   </scm>
 
   <issueManagement>
