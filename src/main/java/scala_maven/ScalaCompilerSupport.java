@@ -195,8 +195,8 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
         }
 
         // launch MetricsService
-        File jar = getArtifactJar("com.triplequote", "dashboard-client_2.12", version);
-        Set<Artifact> allDependencies = getAllDependencies("com.triplequote", "dashboard-client_2.12", version);
+        File jar = getArtifactJar("com.triplequote", "dashboard-client-assembly_2.12", version);
+        Set<Artifact> allDependencies = getAllDependencies("com.triplequote", "dashboard-client-assembly_2.12", version);
 
         List<String> classpath = new ArrayList<>();
         classpath.add(jar.getCanonicalPath());
