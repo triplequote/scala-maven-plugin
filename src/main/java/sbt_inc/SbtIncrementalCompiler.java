@@ -40,8 +40,8 @@ public class SbtIncrementalCompiler {
     private static final String SBT_GROUP_ID = "org.scala-sbt";
     private static final String JAVA_CLASS_VERSION = System.getProperty("java.class.version");
     public static final String COMPILER_INTERFACE_CLASSIFIER = "sources";
-    private static final File DEFAULT_SECONDARY_CACHE_DIR =
-        Paths.get(System.getProperty("user.home"), ".sbt", "1.0", "zinc", "org.scala-sbt").toFile();
+    private static final File DEFAULT_SECONDARY_CACHE_DIR = Paths
+        .get(System.getProperty("user.home"), ".sbt", "1.0", "zinc", "org.scala-sbt").toFile();
 
     private final IncrementalCompiler compiler = ZincUtil.defaultIncrementalCompiler();
     private final CompileOrder compileOrder;
@@ -53,9 +53,9 @@ public class SbtIncrementalCompiler {
     private final File secondaryCacheDir;
     private final CompilerInstance compilerInstance;
 
-    public SbtIncrementalCompiler(CompilerInstance compilerInstance, File libraryJar, File reflectJar, File compilerJar, VersionNumber scalaVersion,
-        List<File> extraJars, MavenArtifactResolver resolver, File secondaryCacheDir, Log mavenLogger, File cacheFile,
-        CompileOrder compileOrder) throws Exception {
+    public SbtIncrementalCompiler(CompilerInstance compilerInstance, File libraryJar, File reflectJar, File compilerJar,
+        VersionNumber scalaVersion, List<File> extraJars, MavenArtifactResolver resolver, File secondaryCacheDir,
+        Log mavenLogger, File cacheFile, CompileOrder compileOrder) throws Exception {
         this.compilerInstance = compilerInstance;
         this.compileOrder = compileOrder;
         this.logger = new SbtLogger(mavenLogger);
@@ -202,7 +202,8 @@ public class SbtIncrementalCompiler {
         String bridgeGroupId = compilerInstance.getCompilerBridgeGroupId();
 
         String cacheFileName = bridgeGroupId + '-' + bridgeArtifactId + '-' + bridgeVersion + "-bin_"
-            + scalaInstance.actualVersion() + "__" + JAVA_CLASS_VERSION + '-' + bridgeVersion + '_' + timestamp + ".jar";
+            + scalaInstance.actualVersion() + "__" + JAVA_CLASS_VERSION + '-' + bridgeVersion + '_' + timestamp
+            + ".jar";
 
         File cachedCompiledBridgeJar = new File(secondaryCacheDir, cacheFileName);
 

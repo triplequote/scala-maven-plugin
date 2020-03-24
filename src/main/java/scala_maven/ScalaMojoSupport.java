@@ -958,7 +958,8 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         return artifact.getFile();
     }
 
-    protected File getArtifactJar(String groupId, String artifactId, String version, String classifier) throws Exception {
+    protected File getArtifactJar(String groupId, String artifactId, String version, String classifier)
+        throws Exception {
         Artifact artifact = factory.createArtifactWithClassifier(groupId, artifactId, version, "jar", classifier);
         resolver.resolve(artifact, remoteRepos, localRepo);
         return artifact.getFile();
