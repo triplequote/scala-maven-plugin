@@ -30,7 +30,6 @@
 					<artifactId>@project.artifactId@</artifactId>
 					<version>@project.version@</version>
 					<configuration>
-						<recompileMode>all</recompileMode>
 						<args>
 							<arg>-target:jvm-1.8</arg>
 						</args>
