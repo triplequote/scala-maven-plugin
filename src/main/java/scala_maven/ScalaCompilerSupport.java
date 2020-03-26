@@ -197,7 +197,8 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
 
         // launch MetricsService
         File jar = getArtifactJar("com.triplequote", "dashboard-client-assembly_2.12", version);
-        Set<Artifact> allDependencies = getAllDependencies("com.triplequote", "dashboard-client-assembly_2.12", version);
+        Set<Artifact> allDependencies = getAllDependencies("com.triplequote", "dashboard-client-assembly_2.12",
+            version);
 
         List<String> classpath = new ArrayList<>();
         classpath.add(jar.getCanonicalPath());
@@ -222,11 +223,14 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
         }
 
         proc.addSysProp("triplequote.dashboard.client.metricsDirectory", hydraMetricsDirectory);
-        Path hydraMetricsConfigFile = Paths.get(hydraMetricsDirectory).resolve("config").resolve("metrics-service.conf").toAbsolutePath();
+        Path hydraMetricsConfigFile = Paths.get(hydraMetricsDirectory).resolve("config").resolve("metrics-service.conf")
+            .toAbsolutePath();
         if (hydraMetricsConfigFile.toFile().isFile()) {
             proc.addSysProp("config.file", hydraMetricsConfigFile.toString());
         } else {
-            String configFileMissing = String.format("No metrics service config file found at %s - see https://docs.triplequote.com/dashboard/metrics-service/", hydraMetricsConfigFile);
+            String configFileMissing = String.format(
+                "No metrics service config file found at %s - see https://docs.triplequote.com/dashboard/metrics-service/",
+                hydraMetricsConfigFile);
             getLog().info(configFileMissing);
         }
         proc.spawn(false);
