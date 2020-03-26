@@ -80,7 +80,6 @@ public class ScalaCompileMojo extends ScalaCompilerSupport {
         return outputDir.getAbsoluteFile();
     }
 
-
     @Override
     protected File getAnalysisCacheFile() {
         return analysisCacheFile.getAbsoluteFile();

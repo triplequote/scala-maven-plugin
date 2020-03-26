@@ -109,7 +109,7 @@ public abstract class ScalaCompilerSupport extends ScalaSourceMojoSupport {
         if (!compileInLoop && recompileMode == RecompileMode.incremental) {
             // TODO - Do we really need this dupliated here?
             if (!outputDir.exists()) {
-              outputDir.mkdirs();
+                outputDir.mkdirs();
             }
             // if not compileInLoop, invoke incrementalCompile immediately
             long n0 = System.nanoTime();

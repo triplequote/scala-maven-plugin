@@ -775,7 +775,8 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         addCompilerPluginOptions(cmd);
         cmd.addJvmArgs(jvmArgs);
         cmd.addJvmArgs(getHydraJvmOptions());
-        // we also have to set the system property in case we're running Scalac in-process (the JVM args above will be ignored)
+        // we also have to set the system property in case we're running Scalac
+        // in-process (the JVM args above will be ignored)
         setHydraLogProperty();
 
         return cmd;
@@ -874,7 +875,9 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         return options;
     }
 
-    /** Return `compile` or `test`, based on what kind of sources we are compiling. */
+    /**
+     * Return `compile` or `test`, based on what kind of sources we are compiling.
+     */
     public abstract String getConfigurationName();
 
     protected List<String> getHydraOptions() throws Exception {
@@ -902,7 +905,8 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
             options.add(timingsFile.getAbsolutePath());
             options.add("-YrootDirectory");
             options.add(baseDir.getAbsolutePath());
-            // we always ask for metrics because there is no easy way to know if it's a clean build or not
+            // we always ask for metrics because there is no easy way to know if it's a
+            // clean build or not
             options.add("-Ymetrics");
         }
         getLog().info(options.toString());
@@ -990,15 +994,16 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
 
         if (ci instanceof HydraCompilerInstance) {
             // filter out other versions of scala-reflect/library
-            for (Artifact artifact: deps) {
+            for (Artifact artifact : deps) {
                 String artifactId = artifact.getArtifactId();
                 if (artifactId.equals("scala-reflect") || artifactId.equals("scala-compiler")) {
                     // only add the -hydraNN version
                     if (artifact.getVersion().contains("hydra"))
                         result.add(artifact);
                     else {
-                        //we don't add the artifact, as it may be a conflicting transitive dependency
-                        getLog().debug("Removed " + artifact + " from compiler dependency list because it does not contain -hydra");
+                        // we don't add the artifact, as it may be a conflicting transitive dependency
+                        getLog().debug("Removed " + artifact
+                            + " from compiler dependency list because it does not contain -hydra");
                     }
 
                 } else if (artifactId.equals("scala-library")) {
@@ -1006,7 +1011,9 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
                         result.add(artifact);
                     else {
                         // we don't add the library, as we might have conflicting versions
-                        getLog().debug("Removed " + artifact + " from compiler dependency list because expected scala-library version is: " + scalaVersion);
+                        getLog().debug("Removed " + artifact
+                            + " from compiler dependency list because expected scala-library version is: "
+                            + scalaVersion);
                     }
                 } else
                     // we add all other artifacts
