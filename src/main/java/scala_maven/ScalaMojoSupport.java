@@ -183,6 +183,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
      *
      * @parameter property="hydraEnabled" default-value="false"
      */
+    @Parameter(defaultValue = "false")
     protected Boolean hydraEnabled = false;
 
     /**
@@ -190,6 +191,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
      *
      * @parameter property="hydraVersion" default-value="2.2.2"
      */
+    @Parameter(defaultValue = "2.2.2")
     protected String hydraVersion = "2.2.2";
 
     /**
@@ -197,6 +199,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
      *
      * @parameter property="hydraCpus" default-value="4"
      */
+    @Parameter(defaultValue = "4")
     protected int hydraCpus = 4;
 
     /**
@@ -205,6 +208,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
      * @parameter property="hydraMetricsDirectory"
      *            default-value="${user.home}/.triplequote/metrics"
      */
+    @Parameter(defaultValue = "${user.home}/.triplequote/metrics")
     protected String hydraMetricsDirectory = "";
 
     /**
@@ -212,6 +216,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
      *
      * @parameter property="hydraMetricsServiceVersion" default-value="1.2.0"
      */
+    @Parameter(defaultValue = "1.2.0")
     protected String hydraMetricsServiceVersion = "";
 
     /**
@@ -219,6 +224,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
      *
      * @parameter property="hydraMetricsServiceJvmOptions" default-value="-Xmx256M"
      */
+    @Parameter(defaultValue = "-Xmx256M")
     protected String hydraMetricsServiceJvmOptions = "";
 
     private CompilerInstance compilerInstance = null;
