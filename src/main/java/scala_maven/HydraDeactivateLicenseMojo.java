@@ -14,6 +14,6 @@ public class HydraDeactivateLicenseMojo extends HydraLicenseMojo {
     @Override
     protected License executeLicenseOperation(HydraLicenseStore store) throws IOException {
         getLog().info("Deactivating license using " + activationServerUrl + ". This may take a while.");
-        return store.deactivate();
+        return store.deactivate(true);
     }
 }
