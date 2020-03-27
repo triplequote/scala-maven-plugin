@@ -25,6 +25,7 @@ import xsbti.compile.CompilerCache;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -55,7 +56,7 @@ public class SbtIncrementalCompiler {
 
     public SbtIncrementalCompiler(CompilerInstance compilerInstance, File libraryJar, File reflectJar, File compilerJar,
         VersionNumber scalaVersion, List<File> extraJars, MavenArtifactResolver resolver, File secondaryCacheDir,
-        Log mavenLogger, File cacheFile, CompileOrder compileOrder) throws Exception {
+        Log mavenLogger, File cacheFile, CompileOrder compileOrder) throws Exception, MalformedURLException {
         this.compilerInstance = compilerInstance;
         this.compileOrder = compileOrder;
         this.logger = new SbtLogger(mavenLogger);
@@ -66,13 +67,21 @@ public class SbtIncrementalCompiler {
 
         List<File> allJars = new ArrayList<>(extraJars);
         allJars.add(libraryJar);
-        allJars.add(reflectJar);
+        // allJars.add(reflectJar);
         allJars.add(compilerJar);
+
+        List<URL> allURLS = new ArrayList<>();
+        allJars.stream().forEach(file -> {
+            try {
+                allURLS.add(file.toURI().toURL());
+            } catch (MalformedURLException e) {
+                mavenLogger.info("Invalid URL in extraJars: " + file.toString());
+            }
+        });
 
         ScalaInstance scalaInstance = new ScalaInstance( //
             scalaVersion.toString(), // version
-            new URLClassLoader(
-                new URL[] { libraryJar.toURI().toURL(), reflectJar.toURI().toURL(), compilerJar.toURI().toURL() }), // loader
+            new URLClassLoader(allURLS.toArray(new URL[] {})), // loader
             ClasspathUtilities.rootLoader(), // loaderLibraryOnly
             libraryJar, // libraryJar
             compilerJar, // compilerJar
@@ -234,8 +243,11 @@ public class SbtIncrementalCompiler {
 
             try {
                 rawCompiler.apply(
-                    JavaConverters.iterableAsScalaIterable(FileUtils.listDirectoryContent(sourcesDir.toPath(),
-                        file -> file.isFile() && file.getName().endsWith(".scala"))).seq().toSeq(), // sources:Seq[File]
+                    JavaConverters
+                        .iterableAsScalaIterable(FileUtils.listDirectoryContent(sourcesDir.toPath(),
+                            file -> file.isFile()
+                                && (file.getName().endsWith(".scala") || file.getName().endsWith(".java"))))
+                        .seq().toSeq(), // sources:Seq[File]
                     JavaConverters.iterableAsScalaIterable(bridgeSourcesDependencies).seq().toSeq(), // classpath:Seq[File],
                     classesDir, // outputDirectory:File,
                     JavaConverters.collectionAsScalaIterable(Collections.<String>emptyList()).seq().toSeq() // options:Seq[String]
