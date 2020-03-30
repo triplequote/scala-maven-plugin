@@ -941,7 +941,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
                 options.add(hydraMetricsDirectory);
             }
         }
-        getLog().info(options.toString());
+        getLog().debug(options.toString());
         return options;
     }
 
