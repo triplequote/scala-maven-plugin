@@ -12,6 +12,7 @@ import org.apache.maven.plugin.logging.Log;
 import sbt.internal.inc.*;
 import sbt.internal.inc.FileAnalysisStore;
 import sbt.internal.inc.ScalaInstance;
+import sbt.internal.inc.classpath.ClassLoaderCache;
 import sbt.internal.inc.classpath.ClasspathUtilities;
 import scala.Option;
 import scala_maven.CompilerInstance;
@@ -27,7 +28,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -53,6 +53,12 @@ public class SbtIncrementalCompiler {
     private final MavenArtifactResolver resolver;
     private final File secondaryCacheDir;
     private final CompilerInstance compilerInstance;
+
+    /**
+     * Cache class loaders, Scala Instance benefits greatly from reusing the
+     * classloader between projects.
+     */
+    private static ClassLoaderCache classLoaderCache = new ClassLoaderCache(ClassLoader.getSystemClassLoader());
 
     public SbtIncrementalCompiler(CompilerInstance compilerInstance, File libraryJar, File reflectJar, File compilerJar,
         VersionNumber scalaVersion, List<File> extraJars, MavenArtifactResolver resolver, File secondaryCacheDir,
@@ -81,7 +87,8 @@ public class SbtIncrementalCompiler {
 
         ScalaInstance scalaInstance = new ScalaInstance( //
             scalaVersion.toString(), // version
-            new URLClassLoader(allURLS.toArray(new URL[] {})), // loader
+            classLoaderCache
+                .apply(scala.collection.JavaConverters.iterableAsScalaIterableConverter(allJars).asScala().toList()), // loader
             ClasspathUtilities.rootLoader(), // loaderLibraryOnly
             libraryJar, // libraryJar
             compilerJar, // compilerJar
