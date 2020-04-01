@@ -1060,6 +1060,7 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
             }
         } else {
             result.addAll(deps);
+            result.removeIf(artifact -> (artifact.getArtifactId().equals("scala-library")));
         }
         return result;
     }
