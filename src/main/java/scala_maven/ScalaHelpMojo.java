@@ -32,4 +32,9 @@ public class ScalaHelpMojo extends ScalaMojoSupport {
         jcmd.addArgs("-version");
         jcmd.run(displayCmd);
     }
+
+    @Override
+    public String getConfigurationName() {
+        return "help";
+    }
 }

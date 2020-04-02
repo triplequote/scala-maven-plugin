@@ -312,4 +312,9 @@ public class ScalaConsoleMojo extends ScalaMojoSupport {
                 ScalaMojoSupport.JAR);
         }
     }
+
+    @Override
+    public String getConfigurationName() {
+        return "console";
+    }
 }

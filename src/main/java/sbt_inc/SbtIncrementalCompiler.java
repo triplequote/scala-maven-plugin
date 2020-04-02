@@ -12,8 +12,10 @@ import org.apache.maven.plugin.logging.Log;
 import sbt.internal.inc.*;
 import sbt.internal.inc.FileAnalysisStore;
 import sbt.internal.inc.ScalaInstance;
+import sbt.internal.inc.classpath.ClassLoaderCache;
 import sbt.internal.inc.classpath.ClasspathUtilities;
 import scala.Option;
+import scala_maven.CompilerInstance;
 import scala_maven.MavenArtifactResolver;
 import scala_maven.VersionNumber;
 import util.FileUtils;
@@ -24,8 +26,8 @@ import xsbti.compile.CompilerCache;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -38,8 +40,9 @@ public class SbtIncrementalCompiler {
 
     private static final String SBT_GROUP_ID = "org.scala-sbt";
     private static final String JAVA_CLASS_VERSION = System.getProperty("java.class.version");
-    private static final File DEFAULT_SECONDARY_CACHE_DIR =
-        Paths.get(System.getProperty("user.home"), ".sbt", "1.0", "zinc", "org.scala-sbt").toFile();
+    public static final String COMPILER_INTERFACE_CLASSIFIER = "sources";
+    private static final File DEFAULT_SECONDARY_CACHE_DIR = Paths
+        .get(System.getProperty("user.home"), ".sbt", "1.0", "zinc", "org.scala-sbt").toFile();
 
     private final IncrementalCompiler compiler = ZincUtil.defaultIncrementalCompiler();
     private final CompileOrder compileOrder;
@@ -49,10 +52,18 @@ public class SbtIncrementalCompiler {
     private final AnalysisStore analysisStore;
     private final MavenArtifactResolver resolver;
     private final File secondaryCacheDir;
+    private final CompilerInstance compilerInstance;
 
-    public SbtIncrementalCompiler(File libraryJar, File reflectJar, File compilerJar, VersionNumber scalaVersion,
-        List<File> extraJars, MavenArtifactResolver resolver, File secondaryCacheDir, Log mavenLogger, File cacheFile,
-        CompileOrder compileOrder) throws Exception {
+    /**
+     * Cache class loaders, Scala Instance benefits greatly from reusing the
+     * classloader between projects.
+     */
+    private static ClassLoaderCache classLoaderCache = new ClassLoaderCache(ClassLoader.getSystemClassLoader());
+
+    public SbtIncrementalCompiler(CompilerInstance compilerInstance, File libraryJar, File reflectJar, File compilerJar,
+        VersionNumber scalaVersion, List<File> extraJars, MavenArtifactResolver resolver, File secondaryCacheDir,
+        Log mavenLogger, File cacheFile, CompileOrder compileOrder) throws Exception, MalformedURLException {
+        this.compilerInstance = compilerInstance;
         this.compileOrder = compileOrder;
         this.logger = new SbtLogger(mavenLogger);
         mavenLogger.info("Using incremental compilation using " + compileOrder + " compile order");
@@ -62,13 +73,22 @@ public class SbtIncrementalCompiler {
 
         List<File> allJars = new ArrayList<>(extraJars);
         allJars.add(libraryJar);
-        allJars.add(reflectJar);
+        // allJars.add(reflectJar);
         allJars.add(compilerJar);
+
+        List<URL> allURLS = new ArrayList<>();
+        allJars.stream().forEach(file -> {
+            try {
+                allURLS.add(file.toURI().toURL());
+            } catch (MalformedURLException e) {
+                mavenLogger.info("Invalid URL in extraJars: " + file.toString());
+            }
+        });
 
         ScalaInstance scalaInstance = new ScalaInstance( //
             scalaVersion.toString(), // version
-            new URLClassLoader(
-                new URL[] { libraryJar.toURI().toURL(), reflectJar.toURI().toURL(), compilerJar.toURI().toURL() }), // loader
+            classLoaderCache
+                .apply(scala.collection.JavaConverters.iterableAsScalaIterableConverter(allJars).asScala().toList()), // loader
             ClasspathUtilities.rootLoader(), // loaderLibraryOnly
             libraryJar, // libraryJar
             compilerJar, // compilerJar
@@ -175,15 +195,7 @@ public class SbtIncrementalCompiler {
     }
 
     private String compilerBridgeArtifactId(String scalaVersion) {
-        if (scalaVersion.startsWith("2.10.")) {
-            return "compiler-bridge_2.10";
-        } else if (scalaVersion.startsWith("2.11.")) {
-            return "compiler-bridge_2.11";
-        } else if (scalaVersion.startsWith("2.12.") || scalaVersion.equals("2.13.0-M1")) {
-            return "compiler-bridge_2.12";
-        } else {
-            return "compiler-bridge_2.13";
-        }
+        return compilerInstance.getCompilerBridgeArtifactId(scalaVersion);
     }
 
     private File getCompiledBridgeJar(ScalaInstance scalaInstance, Log mavenLogger) throws Exception {
@@ -200,10 +212,14 @@ public class SbtIncrementalCompiler {
         }
 
         String zincVersion = properties.getProperty("version");
+        String bridgeVersion = compilerInstance.getCompilerBridgeVersion(zincVersion);
         String timestamp = properties.getProperty("timestamp");
 
-        String cacheFileName = SBT_GROUP_ID + '-' + bridgeArtifactId + '-' + zincVersion + "-bin_"
-            + scalaInstance.actualVersion() + "__" + JAVA_CLASS_VERSION + '-' + zincVersion + '_' + timestamp + ".jar";
+        String bridgeGroupId = compilerInstance.getCompilerBridgeGroupId();
+
+        String cacheFileName = bridgeGroupId + '-' + bridgeArtifactId + '-' + bridgeVersion + "-bin_"
+            + scalaInstance.actualVersion() + "__" + JAVA_CLASS_VERSION + '-' + bridgeVersion + '_' + timestamp
+            + ".jar";
 
         File cachedCompiledBridgeJar = new File(secondaryCacheDir, cacheFileName);
 
@@ -216,10 +232,10 @@ public class SbtIncrementalCompiler {
             // compile and install
             RawCompiler rawCompiler = new RawCompiler(scalaInstance, ClasspathOptionsUtil.auto(), logger);
 
-            File bridgeSources = resolver.getJar(SBT_GROUP_ID, bridgeArtifactId, zincVersion, "sources").getFile();
+            File bridgeSources = resolver.getJar(bridgeGroupId, bridgeArtifactId, bridgeVersion, "sources").getFile();
 
             Set<File> bridgeSourcesDependencies = resolver
-                .getJarAndDependencies(SBT_GROUP_ID, bridgeArtifactId, zincVersion, "sources") //
+                .getJarAndDependencies(bridgeGroupId, bridgeArtifactId, bridgeVersion, "sources") //
                 .stream() //
                 .filter(artifact -> artifact.getScope() != null && !artifact.getScope().equals("provided")) //
                 .map(Artifact::getFile) //
@@ -234,8 +250,11 @@ public class SbtIncrementalCompiler {
 
             try {
                 rawCompiler.apply(
-                    JavaConverters.iterableAsScalaIterable(FileUtils.listDirectoryContent(sourcesDir.toPath(),
-                        file -> file.isFile() && file.getName().endsWith(".scala"))).seq().toSeq(), // sources:Seq[File]
+                    JavaConverters
+                        .iterableAsScalaIterable(FileUtils.listDirectoryContent(sourcesDir.toPath(),
+                            file -> file.isFile()
+                                && (file.getName().endsWith(".scala") || file.getName().endsWith(".java"))))
+                        .seq().toSeq(), // sources:Seq[File]
                     JavaConverters.iterableAsScalaIterable(bridgeSourcesDependencies).seq().toSeq(), // classpath:Seq[File],
                     classesDir, // outputDirectory:File,
                     JavaConverters.collectionAsScalaIterable(Collections.<String>emptyList()).seq().toSeq() // options:Seq[String]
@@ -246,7 +265,7 @@ public class SbtIncrementalCompiler {
                 mainAttributes.putValue(Attributes.Name.MANIFEST_VERSION.toString(), "1.0");
                 mainAttributes.putValue(Attributes.Name.SPECIFICATION_VENDOR.toString(), SBT_GROUP_ID);
                 mainAttributes.putValue(Attributes.Name.SPECIFICATION_TITLE.toString(), "Compiler Bridge");
-                mainAttributes.putValue(Attributes.Name.SPECIFICATION_VERSION.toString(), zincVersion);
+                mainAttributes.putValue(Attributes.Name.SPECIFICATION_VERSION.toString(), bridgeVersion);
 
                 int classesDirPathLength = classesDir.toString().length();
                 Stream<Tuple2<File, String>> stream = FileUtils.listDirectoryContent(classesDir.toPath(), file -> true) //

@@ -183,6 +183,11 @@ public class ScalaScriptMojo extends ScalaMojoSupport {
 
     }
 
+    @Override
+    public String getConfigurationName() {
+        return "script";
+    }
+
     private void runScript(boolean mavenProjectDependency, URLClassLoader loader, String baseName) throws Exception {
         Class<?> compiledScript = loader.loadClass(baseName);
 

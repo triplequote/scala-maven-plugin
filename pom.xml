@@ -1,13 +1,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>net.alchim31.maven</groupId>
+  <!-- <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>9</version>
+  </parent> -->
+
+  <groupId>com.triplequote.maven</groupId>
   <artifactId>scala-maven-plugin</artifactId>
-  <version>4.3.1</version>
+  <version>4.3.1-hydra09-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>scala-maven-plugin</name>
   <description>The scala-maven-plugin (previously maven-scala-plugin) is used for compiling/testing/running/documenting scala code of any maven project.</description>
-  <url>http://github.com/davidB/${project.artifactId}</url>
+  <url>http://github.com/triplequote/${project.artifactId}</url>
   <inceptionYear>2012</inceptionYear>
   <licenses>
     <license>
@@ -16,6 +22,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
   <developers>
     <developer>
       <name>David Bernard</name>
@@ -87,6 +94,32 @@
     </contributor>
   </contributors>
 
+  <distributionManagement>
+    <repository>
+      <id>hydra-releases</id>
+      <name>Triplequote Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-release</url>
+    </repository>
+
+    <snapshotRepository>
+      <id>hydra-snapshots</id>
+      <name>Triplequote Maven Snapshots</name>
+      <url>https://repo.triplequote.com/artifactory/libs-snapshot</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <scm>
+    <connection>scm:git:git://github.com/triplequote/${project.artifactId}.git</connection>
+    <developerConnection>scm:git:git@github.com:triplequote/${project.artifactId}.git</developerConnection>
+    <url>http://github.com/triplequote/${project.artifactId}/</url>
+    <tag>3.2.2</tag>
+  </scm>
+
+  <issueManagement>
+    <system>github</system>
+    <url>http://github.com/triplequote/${project.artifactId}/issues#issue/</url>
+  </issueManagement>
+
   <mailingLists>
     <mailingList>
       <name>maven-and-scala</name>
@@ -95,30 +128,6 @@
     </mailingList>
   </mailingLists>
 
-  <scm>
-    <connection>scm:git:git://github.com/davidB/${project.artifactId}.git</connection>
-    <developerConnection>scm:git:git@github.com:davidB/${project.artifactId}.git</developerConnection>
-    <url>http://github.com/davidB/${project.artifactId}/</url>
-    <tag>4.3.1</tag>
-  </scm>
-
-  <issueManagement>
-    <system>github</system>
-    <url>http://github.com/davidB/${project.artifactId}/issues#issue/</url>
-  </issueManagement>
-
-  <distributionManagement>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Nexus Release Repository</name>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
   <properties>
     <encoding>UTF-8</encoding>
     <github.global.server>github</github.global.server>
@@ -128,11 +137,25 @@
     <maven.version>3.3.9</maven.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
+    <additionalparam>-Xdoclint:none</additionalparam>
   </properties>
 
   <prerequisites>
     <maven>${maven.version}</maven>
   </prerequisites>
+
+  <repositories>
+    <repository>
+      <id>hydra-releases</id>
+      <name>Triplequote Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-release</url>
+    </repository>
+    <repository>
+      <id>hydra-snapshots</id>
+      <name>Triplequote Snapshot Maven repo</name>
+      <url>https://repo.triplequote.com/artifactory/libs-snapshot</url>
+    </repository>
+  </repositories>
 
   <dependencies>
     <dependency>
@@ -250,28 +273,12 @@
       <artifactId>scala-java8-compat_2.12</artifactId>
       <version>0.9.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.triplequote</groupId>
+      <artifactId>license-checking</artifactId>
+      <version>2.2.2</version>
+    </dependency>
   </dependencies>
-  <repositories>
-    <repository>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </repository>
-    <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>central</id>
-      <name>Central Repository</name>
-      <url>https://repo.maven.apache.org/maven2</url>
-    </repository>
-  </repositories>
   <pluginRepositories>
     <pluginRepository>
       <releases>
@@ -474,7 +481,8 @@
         </dependencies>
         <configuration>
           <releaseProfiles>release</releaseProfiles>
-          <goals>install animal-sniffer:check site deploy nexus-staging:release</goals>
+          <goals>changes:changes-validate install deploy</goals>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
           <useReleaseProfile>false</useReleaseProfile>
           <autoVersionSubmodules>true</autoVersionSubmodules>
         </configuration>

@@ -84,4 +84,9 @@ public class ScalaCompileMojo extends ScalaCompilerSupport {
     protected File getAnalysisCacheFile() {
         return analysisCacheFile.getAbsoluteFile();
     }
+
+    @Override
+    public String getConfigurationName() {
+        return "compile";
+    }
 }

@@ -1,13 +1,5 @@
 package scala_maven;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.factory.ArtifactFactory;
@@ -41,13 +33,16 @@ import org.apache.maven.shared.dependency.graph.traversal.DependencyNodeVisitor;
 import org.apache.maven.shared.dependency.graph.traversal.FilteringDependencyNodeVisitor;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.util.StringUtils;
-
+import sbt_inc.SbtIncrementalCompiler;
 import scala_maven_dependency.CheckScalaVersionVisitor;
 import scala_maven_dependency.ScalaDistroArtifactFilter;
 import scala_maven_executions.JavaMainCaller;
 import scala_maven_executions.JavaMainCallerByFork;
 import scala_maven_executions.JavaMainCallerInProcess;
 import scala_maven_executions.MainHelper;
+
+import java.io.File;
+import java.util.*;
 
 public abstract class ScalaMojoSupport extends AbstractMojo {
 
@@ -184,10 +179,67 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
     private String scalaVersion;
 
     /**
+     * Whether to use Hydra or not
+     *
+     * @parameter property="hydraEnabled" default-value="false"
+     */
+    @Parameter(defaultValue = "false")
+    protected Boolean hydraEnabled = false;
+
+    /**
+     * Whether to use Hydra or not
+     *
+     * @parameter property="hydraVersion" default-value="2.2.2"
+     */
+    @Parameter(defaultValue = "2.2.2")
+    protected String hydraVersion = "2.2.2";
+
+    /**
+     * The number of cores to use by Hydra
+     *
+     * @parameter property="hydraCpus" default-value="4"
+     */
+    @Parameter(defaultValue = "4")
+    protected int hydraCpus = 4;
+
+    /**
+     * Where to store metrics files until they are uploaded
+     *
+     * @parameter property="hydraMetricsDirectory"
+     *            default-value="${user.home}/.triplequote/metrics"
+     */
+    @Parameter(defaultValue = "${user.home}/.triplequote/metrics")
+    protected String hydraMetricsDirectory = "";
+
+    /**
+     * Version of the MetricsService uploader
+     *
+     * @parameter property="hydraMetricsServiceVersion" default-value="1.2.0"
+     */
+    @Parameter(defaultValue = "1.2.0")
+    protected String hydraMetricsServiceVersion = "";
+
+    /**
+     * Version of the MetricsService uploader
+     *
+     * @parameter property="hydraMetricsServiceJvmOptions" default-value="-Xmx256M"
+     */
+    @Parameter(defaultValue = "-Xmx256M")
+    protected String hydraMetricsServiceJvmOptions = "";
+
+    private CompilerInstance compilerInstance = null;
+
+    CompilerInstance getCompilerInstance() {
+        if (compilerInstance == null) {
+            compilerInstance = hydraEnabled ? new HydraCompilerInstance() : new VanillaCompilerInstance();
+        }
+        return compilerInstance;
+    }
+
+    /**
      * Organization/group ID of the Scala used in the project. Default value is
      * 'org.scala-lang'. This is an advanced setting used for clones of the Scala
      * Language. It should be disregarded in standard use cases.
-     *
      */
     @Parameter(property = "scala.organization", defaultValue = "org.scala-lang")
     private String scalaOrganization;
@@ -737,14 +789,32 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
      * @return a {@link JavaMainCaller} to use to invoke the given command.
      */
     final JavaMainCaller getScalaCommand(final boolean forkOverride, final String mainClass) throws Exception {
-        JavaMainCaller cmd = getEmptyScalaCommand(mainClass, forkOverride);
+        JavaMainCaller cmd = getEmptyScalaCommand(getCompilerInstance().getMainClass());
         cmd.addArgs(args);
+
+        List<String> hydraOptionsList = getHydraOptions();
+        String[] hydraOptions = new String[hydraOptionsList.size()];
+        hydraOptionsList.toArray(hydraOptions);
+
+        cmd.addArgs(hydraOptions);
         if (StringUtils.isNotEmpty(addScalacArgs)) {
             cmd.addArgs(StringUtils.split(addScalacArgs, "|"));
         }
         addCompilerPluginOptions(cmd);
         cmd.addJvmArgs(jvmArgs);
+        cmd.addJvmArgs(getHydraJvmOptions());
+        // we also have to set the system property in case we're running Scalac
+        // in-process (the JVM args above will be ignored)
+        setHydraLogProperty();
+
         return cmd;
+    }
+
+    /**
+     * Set the system property used by Hydra for naming the log file.
+     */
+    protected void setHydraLogProperty() {
+        System.setProperty("hydra.logFile", new File(getHydraBaseDir(), "hydra.log").getAbsolutePath());
     }
 
     /**
@@ -825,11 +895,84 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         List<String> options = new ArrayList<>();
         if (args != null)
             Collections.addAll(options, args);
+        options.addAll(getHydraOptions());
         if (StringUtils.isNotEmpty(addScalacArgs)) {
             Collections.addAll(options, StringUtils.split(addScalacArgs, "|"));
         }
         options.addAll(getCompilerPluginOptions());
         return options;
+    }
+
+    /**
+     * Return `compile` or `test`, based on what kind of sources we are compiling.
+     */
+    public abstract String getConfigurationName();
+
+    protected List<String> getHydraOptions() throws Exception {
+        List<String> options = new ArrayList<String>();
+        if (hydraEnabled) {
+
+            String projectName = project.getName().replace(' ', '_');
+            String projectTag = projectName + "/" + getConfigurationName();
+            File baseDir = session.getTopLevelProject().getBasedir();
+
+            File hydraMavenDir = getHydraBaseDir();
+            File projDir = new File(hydraMavenDir, projectName);
+            File hydraStore = new File(projDir, getConfigurationName());
+            File timingsFile = new File(hydraMavenDir, "timings.csv");
+
+            options.add("-sourcepath");
+            options.add(MainHelper.toMultiPath(FileUtils.filesOf(getSourceDirectories(), useCanonicalPath)));
+            options.add("-cpus");
+            options.add(String.valueOf(hydraCpus));
+            options.add("-YhydraStore");
+            options.add(hydraStore.getAbsolutePath());
+            options.add("-YhydraTag");
+            options.add(projectTag);
+            options.add("-YtimingsFile");
+            options.add(timingsFile.getAbsolutePath());
+            options.add("-YrootDirectory");
+            options.add(baseDir.getAbsolutePath());
+            // we always ask for metrics because there is no easy way to know if it's a
+            // clean build or not
+            options.add("-Ymetrics");
+            if (hydraVersionWithDashboard()) {
+                options.add("-YhydraMetricsDirectory");
+                options.add(hydraMetricsDirectory);
+            }
+        }
+        getLog().debug(options.toString());
+        return options;
+    }
+
+    protected String[] getHydraJvmOptions() {
+        List<String> options = new ArrayList<String>();
+        if (hydraEnabled) {
+            File hydraMavenDir = getHydraBaseDir();
+            File hydraLogFile = new File(hydraMavenDir, "hydra.log");
+            options.add("-Dhydra.logFile=" + hydraLogFile.getAbsolutePath());
+        }
+
+        // convert to Array
+        String[] returnedArray = new String[options.size()];
+        options.toArray(returnedArray);
+
+        return returnedArray;
+    }
+
+    /** Return the directory where all Hydra-related files should be placed */
+    protected File getHydraBaseDir() {
+        File baseDir = session.getTopLevelProject().getBasedir();
+
+        File hydraDir = new File(baseDir, ".hydra");
+        return new File(hydraDir, "maven");
+    }
+
+    protected boolean hydraVersionWithDashboard() {
+        // we add metricsDirectory only with Hydra is above 0.9.12
+        VersionNumber v = new VersionNumber(hydraVersion);
+        VersionNumber minMetricsVer = new VersionNumber("0.9.13");
+        return v.compareTo(minMetricsVer) >= 0;
     }
 
     protected List<String> getJavacOptions() {
@@ -880,15 +1023,58 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
             File lib = new File(scalaHome, "lib");
             return new File(lib, SCALA_COMPILER_ARTIFACTID + ".jar");
         }
-        return getArtifactJar(getScalaOrganization(), SCALA_COMPILER_ARTIFACTID, findScalaVersion().toString());
+        CompilerInstance ci = getCompilerInstance();
+        return getArtifactJar(ci.getGroupId(), ci.getArtifactId(), ci.getVersion());
+    }
+
+    private Set<Artifact> cleanUpDependencies(Set<Artifact> deps, CompilerInstance ci) throws Exception {
+        Set<Artifact> result = new HashSet<Artifact>();
+        VersionNumber scalaVersion = findScalaVersion();
+
+        if (ci instanceof HydraCompilerInstance) {
+            // filter out other versions of scala-reflect/library
+            for (Artifact artifact : deps) {
+                String artifactId = artifact.getArtifactId();
+                if (artifactId.equals("scala-reflect") || artifactId.equals("scala-compiler")) {
+                    // only add the -hydraNN version
+                    if (artifact.getVersion().contains("hydra"))
+                        result.add(artifact);
+                    else {
+                        // we don't add the artifact, as it may be a conflicting transitive dependency
+                        getLog().debug("Removed " + artifact
+                            + " from compiler dependency list because it does not contain -hydra");
+                    }
+
+                } else if (artifactId.equals("scala-library")) {
+                    if (artifact.getVersion().equals(scalaVersion.toString()))
+                        result.add(artifact);
+                    else {
+                        // we don't add the library, as we might have conflicting versions
+                        getLog().debug("Removed " + artifact
+                            + " from compiler dependency list because expected scala-library version is: "
+                            + scalaVersion);
+                    }
+                } else
+                    // we add all other artifacts
+                    result.add(artifact);
+            }
+        } else {
+            result.addAll(deps);
+            result.removeIf(artifact -> (artifact.getArtifactId().equals("scala-library")));
+        }
+        return result;
     }
 
     protected List<File> getCompilerDependencies() throws Exception {
         List<File> d = new ArrayList<>();
         if (StringUtils.isEmpty(scalaHome)) {
-            for (Artifact artifact : getAllDependencies(getScalaOrganization(), SCALA_COMPILER_ARTIFACTID,
-                findScalaVersion().toString())) {
-                d.add(artifact.getFile());
+            CompilerInstance ci = getCompilerInstance();
+            Set<Artifact> deps = getAllDependencies(ci.getGroupId(), ci.getArtifactId(), ci.getVersion());
+
+            for (Artifact artifact : cleanUpDependencies(deps, ci)) {
+                // getLog().info("Adding compiler dependency: " + artifact);
+                if (artifact.getFile() != null)
+                    d.add(artifact.getFile());
             }
         } else {
             for (File f : new File(scalaHome, "lib").listFiles()) {
@@ -908,7 +1094,14 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
         return artifact.getFile();
     }
 
-    private Set<Artifact> getAllDependencies(String groupId, String artifactId, String version) {
+    protected File getArtifactJar(String groupId, String artifactId, String version, String classifier)
+        throws Exception {
+        Artifact artifact = factory.createArtifactWithClassifier(groupId, artifactId, version, "jar", classifier);
+        resolver.resolve(artifact, remoteRepos, localRepo);
+        return artifact.getFile();
+    }
+
+    protected Set<Artifact> getAllDependencies(String groupId, String artifactId, String version) {
         Set<Artifact> result = new HashSet<>();
         Artifact pom = factory.createArtifact(groupId, artifactId, version, "", ScalaMojoSupport.POM);
         Set<Artifact> d = resolveArtifactDependencies(pom);
@@ -973,5 +1166,114 @@ public abstract class ScalaMojoSupport extends AbstractMojo {
             }
         }
         return plugins;
+    }
+
+    protected String findVersionFromPluginArtifacts(String groupId, String artifactId) {
+        for (Artifact art : pluginArtifacts) {
+            if (groupId.equals(art.getGroupId()) && artifactId.equals(art.getArtifactId())) {
+                return art.getVersion();
+            }
+        }
+        throw new IllegalArgumentException(
+            "Could not locate artifact " + groupId + ":" + artifactId + " in plugin's dependencies");
+    }
+
+    /**
+     * Retrieves the list of *all* root source directories. We need to pass all
+     * .java and .scala files into the scala compiler
+     */
+    protected List<File> getSourceDirectories() throws Exception {
+        return new ArrayList<File>();
+    }
+
+    protected class VanillaCompilerInstance implements CompilerInstance {
+        @Override
+        public String getGroupId() {
+            return getScalaOrganization();
+        }
+
+        @Override
+        public String getArtifactId() {
+            return SCALA_COMPILER_ARTIFACTID;
+        }
+
+        @Override
+        public String getVersion() throws Exception {
+            return findScalaVersion().toString();
+        }
+
+        @Override
+        public String getMainClass() {
+            return scalaClassName;
+        }
+
+        @Override
+        public String getCompilerBridgeGroupId() {
+            return "org.scala-sbt";
+        }
+
+        @Override
+        public String getCompilerBridgeArtifactId(String scalaVersion) {
+            if (scalaVersion.startsWith("2.10.")) {
+                return "compiler-bridge_2.10";
+            } else if (scalaVersion.startsWith("2.11.")) {
+                return "compiler-bridge_2.11";
+            } else if (scalaVersion.startsWith("2.12.") || scalaVersion.equals("2.13.0-M1")) {
+                return "compiler-bridge_2.12";
+            } else {
+                return "compiler-bridge_2.13";
+            }
+        }
+
+        @Override
+        public String getCompilerBridgeVersion(String zincVersion) {
+            return zincVersion;
+        }
+    }
+
+    protected class HydraCompilerInstance implements CompilerInstance {
+        @Override
+        public String getGroupId() {
+            return "com.triplequote";
+        }
+
+        @Override
+        public String getArtifactId() throws Exception {
+            return "hydra_" + findScalaVersion();
+        }
+
+        @Override
+        public String getVersion() {
+            return hydraVersion;
+        }
+
+        @Override
+        public String getMainClass() {
+            return "com.triplequote.hydra.Main";
+        }
+
+        @Override
+        public String getCompilerBridgeGroupId() {
+            return "com.triplequote";
+        }
+
+        @Override
+        public String getCompilerBridgeArtifactId(String scalaVersion) {
+            // duplicated logic from the Triplequote sbt-hydra plugin
+            if (scalaVersion.startsWith("2.10.")) {
+                return "hydra-bridge_1_0";
+            } else if (scalaVersion.startsWith("2.11.")) {
+                return "hydra-bridge_1_0";
+            } else if (scalaVersion.startsWith("2.12.") || scalaVersion.equals("2.13.0-M1")) {
+                return "hydra-bridge_1_0";
+            } else {
+                return "hydra-bridge_1_0_213";
+            }
+        }
+
+        @Override
+        public String getCompilerBridgeVersion(String zincVersion) {
+            return getVersion();
+        }
     }
 }
